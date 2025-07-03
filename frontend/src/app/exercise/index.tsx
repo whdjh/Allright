@@ -44,8 +44,23 @@ export default function ExercisePage() {
     const loadSounds = async () => {
       try {
         console.log('소리 로드 시작...')
-        await audioManager.initialize()
-        console.log('소리 로드 완료')
+        
+        const { sound: pikSound } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/beep/pik.mp3'),
+          { shouldPlay: false, volume: 1.0 }
+        )
+        await pikSound.setStatusAsync({ shouldPlay: false, volume: 1.0 })
+        pikSoundRef.current = pikSound
+        console.log('pik 소리 로드 완료')
+
+        const { sound: pipSound } = await Audio.Sound.createAsync(
+          require('../../assets/sounds/beep/pip.mp3'),
+          { shouldPlay: false, volume: 1.0 }
+        )
+        await pipSound.setStatusAsync({ shouldPlay: false, volume: 1.0 })
+        pipSoundRef.current = pipSound
+        console.log('pip 소리 로드 완료')
+        
       } catch (error) {
         console.log('소리 로드 실패:', error)
       }
@@ -61,7 +76,18 @@ export default function ExercisePage() {
   // 소리 재생 함수
   const playSound = async (type: 'pik' | 'pip') => {
     try {
-      await audioManager.playSound(type)
+      const sound = type === 'pik' ? pikSoundRef.current : pipSoundRef.current
+      if (sound) {
+        // 소리가 로드되어 있는지 확인
+        const status = await sound.getStatusAsync()
+        if (status.isLoaded) {
+          await sound.replayAsync()
+        } else {
+          console.log(`${type} 소리가 로드되지 않음`)
+        }
+      } else {
+        console.log(`${type} 소리 참조가 없음`)
+      }
     } catch (error) {
       console.log('소리 재생 실패:', error)
     }
@@ -104,8 +130,18 @@ export default function ExercisePage() {
 
   // 숫자 카운트 소리 재생 함수
   const playCountSound = async (num: number) => {
+    const soundFile = countSounds[num]
+    if (!soundFile) return
     try {
-      await audioManager.playSound(num.toString())
+      const { sound } = await Audio.Sound.createAsync(soundFile, { volume: 1.0 })
+      const status = await sound.getStatusAsync()
+      if (status.isLoaded) {
+        await sound.setStatusAsync({ volume: 1.0 })
+        await sound.replayAsync()
+        setTimeout(() => {
+          sound.unloadAsync()
+        }, 1500)
+      }
     } catch (e) {
       console.log('카운트 소리 재생 실패:', e)
     }
@@ -114,7 +150,16 @@ export default function ExercisePage() {
   // 휴식 소리 재생 함수
   const playRestSound = async (type: 'start' | 'end') => {
     try {
-      await audioManager.playSound(`rest-${type}`)
+      const soundFile = restSounds[type]
+      const { sound } = await Audio.Sound.createAsync(soundFile, { volume: 1.0 })
+      const status = await sound.getStatusAsync()
+      if (status.isLoaded) {
+        await sound.setStatusAsync({ volume: 1.0 })
+        await sound.replayAsync()
+        setTimeout(() => {
+          sound.unloadAsync()
+        }, 2000)
+      }
     } catch (e) {
       console.log('휴식 소리 재생 실패:', e)
     }
