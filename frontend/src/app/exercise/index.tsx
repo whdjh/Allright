@@ -75,9 +75,18 @@ export default function ExercisePage() {
       try {
         console.log('소리 로드 시작...')
         
+        // 웹 환경에서 오디오 컨텍스트 초기화
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+          staysActiveInBackground: true,
+          playsInSilentModeIOS: true,
+          shouldDuckAndroid: true,
+          playThroughEarpieceAndroid: false,
+        })
+        
         const { sound: pikSound } = await Audio.Sound.createAsync(
           require('../../assets/sounds/beep/pik.mp3'),
-          { shouldPlay: false, volume: 1.0 }
+          { shouldPlay: false, volume: 1.0, isLooping: false }
         )
         await pikSound.setStatusAsync({ shouldPlay: false, volume: 1.0 })
         pikSoundRef.current = pikSound
@@ -85,7 +94,7 @@ export default function ExercisePage() {
 
         const { sound: pipSound } = await Audio.Sound.createAsync(
           require('../../assets/sounds/beep/pip.mp3'),
-          { shouldPlay: false, volume: 1.0 }
+          { shouldPlay: false, volume: 1.0, isLooping: false }
         )
         await pipSound.setStatusAsync({ shouldPlay: false, volume: 1.0 })
         pipSoundRef.current = pipSound
@@ -116,6 +125,8 @@ export default function ExercisePage() {
         // 소리가 로드되어 있는지 확인
         const status = await sound.getStatusAsync()
         if (status.isLoaded) {
+          // 웹 환경에서 재생 전에 포지션을 0으로 리셋
+          await sound.setPositionAsync(0)
           await sound.replayAsync()
         } else {
           console.log(`${type} 소리가 로드되지 않음`)
@@ -158,10 +169,15 @@ export default function ExercisePage() {
     const soundFile = countSounds[num]
     if (!soundFile) return
     try {
-      const { sound } = await Audio.Sound.createAsync(soundFile, { volume: 1.0 })
+      const { sound } = await Audio.Sound.createAsync(soundFile, { 
+        volume: 1.0, 
+        isLooping: false,
+        shouldPlay: false 
+      })
       const status = await sound.getStatusAsync()
       if (status.isLoaded) {
         await sound.setStatusAsync({ volume: 1.0 })
+        await sound.setPositionAsync(0)
         await sound.replayAsync()
         setTimeout(() => {
           sound.unloadAsync()
@@ -176,10 +192,15 @@ export default function ExercisePage() {
   const playRestSound = async (type: 'start' | 'end') => {
     try {
       const soundFile = restSounds[type]
-      const { sound } = await Audio.Sound.createAsync(soundFile, { volume: 1.0 })
+      const { sound } = await Audio.Sound.createAsync(soundFile, { 
+        volume: 1.0, 
+        isLooping: false,
+        shouldPlay: false 
+      })
       const status = await sound.getStatusAsync()
       if (status.isLoaded) {
         await sound.setStatusAsync({ volume: 1.0 })
+        await sound.setPositionAsync(0)
         await sound.replayAsync()
         setTimeout(() => {
           sound.unloadAsync()
